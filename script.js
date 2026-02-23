@@ -84,6 +84,7 @@ const pieLegend = document.getElementById('pieLegend');
 const expenseDateHint = document.getElementById('expenseDateHint');
 const quickAddGrid = document.getElementById('quickAddGrid');
 const amountChips = document.getElementById('amountChips');
+const resetAppBtn = document.getElementById('resetAppBtn');
 
 // ========== LOAD DATA FROM LOCAL STORAGE ==========
 function loadData() {
@@ -598,6 +599,18 @@ function renderInsightsSection() {
   }
 }
 
+// Reset all app data (balance, gastos, utang, custom presets)
+function resetAppData() {
+  var ok = confirm('I-reset tanan data (balance, gastos, utang, presets)? Indi na mabalik.');
+  if (!ok) return;
+  try {
+    localStorage.clear();
+  } catch (e) {
+    // ignore
+  }
+  location.reload();
+}
+
 // ========== VIEW HISTORY ==========
 function openHistory() {
   renderHistory();
@@ -620,73 +633,92 @@ function formatDate(isoString) {
 }
 
 function renderHistory() {
-  // Combine expenses and borrows, sort by date (newest first)
-  const expenseEntries = expenses.map(function (e) {
-    return { type: 'expense', data: e, date: e.date };
-  });
-  const borrowEntries = borrows.map(function (b) {
-    return { type: 'borrow', data: b, date: b.date };
-  });
-  const all = expenseEntries.concat(borrowEntries);
-  all.sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+  // Separate expenses and borrows, each sorted by date (newest first)
+  const expenseEntries = expenses
+    .map(function (e) { return { type: 'expense', data: e, date: e.date }; })
+    .sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+  const borrowEntries = borrows
+    .map(function (b) { return { type: 'borrow', data: b, date: b.date }; })
+    .sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
 
-  if (all.length === 0) {
+  if (expenseEntries.length === 0 && borrowEntries.length === 0) {
     historyList.innerHTML = '<p class="empty-history">Wala pa gastos ukon utang.<br>Idagdag sa punta!</p>';
     return;
   }
 
   historyList.innerHTML = '';
-  all.forEach(function (entry) {
-    const div = document.createElement('div');
-    div.className = 'history-item ' + entry.type;
 
-    if (entry.type === 'expense') {
-      const e = entry.data;
-      div.innerHTML =
-        '<div class="item-left">' +
-          '<span class="item-emoji">' + escapeHtml(e.emoji) + '</span>' +
-          '<div class="item-details">' +
-            '<div class="item-title">' + escapeHtml(e.name) + '</div>' +
-            '<div class="item-date">' + formatDate(e.date) + '</div>' +
-          '</div>' +
+  function appendExpenseItem(entry) {
+    const div = document.createElement('div');
+    div.className = 'history-item expense';
+    const e = entry.data;
+    div.innerHTML =
+      '<div class="item-left">' +
+        '<span class="item-emoji">' + escapeHtml(e.emoji) + '</span>' +
+        '<div class="item-details">' +
+          '<div class="item-title">' + escapeHtml(e.name) + '</div>' +
+          '<div class="item-date">' + formatDate(e.date) + '</div>' +
         '</div>' +
-        '<span class="item-amount expense-amount">- ₱' + formatNumber(e.amount) + '</span>';
+      '</div>' +
+      '<span class="item-amount expense-amount">- ₱' + formatNumber(e.amount) + '</span>';
+    historyList.appendChild(div);
+  }
+
+  function appendBorrowItem(entry) {
+    const div = document.createElement('div');
+    div.className = 'history-item borrow';
+    const b = entry.data;
+    const paidBack = b.paidBack || 0;
+    const isFullyPaid = paidBack >= b.amount;
+    const remaining = b.amount - paidBack;
+    const title = b.person + ' nangutang';
+    div.classList.add('borrow-row');
+    if (isFullyPaid) div.classList.add('paid');
+    var nameClass = 'borrow-name' + (isFullyPaid ? ' paid' : '');
+    var checkIcon = isFullyPaid ? '☑' : '☐';
+    var statusHtml = '';
+    if (isFullyPaid) {
+      statusHtml = '<span class="item-status paid">Bayad na</span>';
     } else {
-      const b = entry.data;
-      const paidBack = b.paidBack || 0;
-      const isFullyPaid = paidBack >= b.amount;
-      const remaining = b.amount - paidBack;
-      const title = b.person + ' nangutang';
-      div.classList.add('borrow-row');
-      if (isFullyPaid) div.classList.add('paid');
-      var nameClass = 'borrow-name' + (isFullyPaid ? ' paid' : '');
-      var checkIcon = isFullyPaid ? '☑' : '☐';
-      var statusHtml = '';
-      if (isFullyPaid) {
-        statusHtml = '<span class="item-status paid">Bayad na</span>';
-      } else {
-        statusHtml = '<div class="borrow-actions">' +
-          '<span class="item-status unpaid">₱' + formatNumber(remaining) + ' nabilin</span>' +
-          '<button type="button" class="btn-record-payment" data-borrow-id="' + b.id + '">Record Bayad</button>' +
-          '<button type="button" class="btn-mark-paid" data-borrow-id="' + b.id + '">Mark Bayad</button>' +
-          '</div>';
-      }
-      div.innerHTML =
-        '<div class="item-left">' +
-          '<span class="borrow-checkbox" data-borrow-id="' + b.id + '" aria-label="' + (isFullyPaid ? 'Bayad na' : 'Mark Bayad') + '">' + checkIcon + '</span>' +
-          '<span class="item-emoji">' + escapeHtml(b.emoji) + '</span>' +
-          '<div class="item-details">' +
-            '<div class="item-title"><span class="' + nameClass + '">' + escapeHtml(title) + '</span></div>' +
-            '<div class="item-date">' + formatDate(b.date) + '</div>' +
-            '<span class="borrow-progress">₱' + formatNumber(paidBack) + ' / ₱' + formatNumber(b.amount) + '</span>' +
-            statusHtml +
-          '</div>' +
-        '</div>' +
-        '<span class="item-amount">₱' + formatNumber(b.amount) + '</span>';
+      statusHtml = '<div class="borrow-actions">' +
+        '<span class="item-status unpaid">₱' + formatNumber(remaining) + ' nabilin</span>' +
+        '<button type="button" class="btn-record-payment" data-borrow-id="' + b.id + '">Record Bayad</button>' +
+        '<button type="button" class="btn-mark-paid" data-borrow-id="' + b.id + '">Mark Bayad</button>' +
+        '</div>';
     }
+    div.innerHTML =
+      '<div class="item-left">' +
+        '<span class="borrow-checkbox" data-borrow-id="' + b.id + '" aria-label="' + (isFullyPaid ? 'Bayad na' : 'Mark Bayad') + '">' + checkIcon + '</span>' +
+        '<span class="item-emoji">' + escapeHtml(b.emoji) + '</span>' +
+        '<div class="item-details">' +
+          '<div class="item-title"><span class="' + nameClass + '">' + escapeHtml(title) + '</span></div>' +
+          '<div class="item-date">' + formatDate(b.date) + '</div>' +
+          '<span class="borrow-progress">₱' + formatNumber(paidBack) + ' / ₱' + formatNumber(b.amount) + '</span>' +
+          statusHtml +
+        '</div>' +
+      '</div>' +
+      '<span class="item-amount">₱' + formatNumber(b.amount) + '</span>';
 
     historyList.appendChild(div);
-  });
+  }
+
+  // Expenses section
+  if (expenseEntries.length > 0) {
+    const header = document.createElement('h3');
+    header.className = 'history-section-title';
+    header.textContent = 'Mga Gasto';
+    historyList.appendChild(header);
+    expenseEntries.forEach(appendExpenseItem);
+  }
+
+  // Borrows section
+  if (borrowEntries.length > 0) {
+    const header = document.createElement('h3');
+    header.className = 'history-section-title';
+    header.textContent = 'Mga Utang';
+    historyList.appendChild(header);
+    borrowEntries.forEach(appendBorrowItem);
+  }
 
   historyList.querySelectorAll('.btn-mark-paid').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -754,6 +786,7 @@ if (closeHistory) closeHistory.addEventListener('click', closeHistoryScreen);
 
 if (cancelPayment) cancelPayment.addEventListener('click', closePaymentModal);
 if (savePayment) savePayment.addEventListener('click', savePaymentHandler);
+if (resetAppBtn) resetAppBtn.addEventListener('click', resetAppData);
 
 // Close modals when clicking backdrop
 [addMoneyModal, expenseModal, borrowModal, paymentModal].filter(Boolean).forEach(function (modal) {

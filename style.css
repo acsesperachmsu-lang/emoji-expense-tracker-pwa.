@@ -386,6 +386,12 @@ body::after {
   color: var(--text-soft);
 }
 
+.btn-reset {
+  margin-top: 0.75rem;
+  width: 100%;
+  font-size: 0.8rem;
+}
+
 /* Expense modal date hint */
 .expense-date-hint {
   font-size: 0.75rem;
@@ -810,6 +816,15 @@ body::after {
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
+}
+
+.history-section-title {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0.5rem 0 0.1rem;
 }
 
 .history-item {
