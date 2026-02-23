@@ -233,6 +233,16 @@ function buildQuickAddButtons() {
 
     quickAddGrid.appendChild(btn);
   });
+
+  // Extra tile: quick access for adding utang (same size as other icons)
+  var utangBtn = document.createElement('button');
+  utangBtn.type = 'button';
+  utangBtn.className = 'quick-add-btn';
+  utangBtn.innerHTML = '<span class="quick-add-emoji">🤝</span><span class="quick-add-label">I-add utang</span>';
+  utangBtn.addEventListener('click', function () {
+    openBorrowModal();
+  });
+  quickAddGrid.appendChild(utangBtn);
 }
 
 function closeExpenseModal() {
