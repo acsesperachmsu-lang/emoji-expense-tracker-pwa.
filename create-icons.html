@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create App Icons</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; max-width: 600px; margin: 0 auto; }
+    canvas { display: block; margin: 1rem 0; border: 1px solid #ccc; }
+    button { padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; margin-right: 0.5rem; }
+    p { color: #666; }
+  </style>
+</head>
+<body>
+  <h1>Create PWA Icons</h1>
+  <p>Click the buttons below to download icon-192.png and icon-512.png. Save them in the same folder as this file (emoji-expense-tracker-pwa).</p>
+  <p><strong>192×192</strong> <button type="button" id="dl192">Download icon-192.png</button></p>
+  <canvas id="c192" width="192" height="192"></canvas>
+  <p><strong>512×512</strong> <button type="button" id="dl512">Download icon-512.png</button></p>
+  <canvas id="c512" width="512" height="512"></canvas>
+  <script>
+    function drawIcon(canvas) {
+      var ctx = canvas.getContext('2d');
+      var size = canvas.width;
+      ctx.fillStyle = '#2563eb';
+      ctx.fillRect(0, 0, size, size);
+      ctx.fillStyle = '#fff';
+      ctx.font = (size * 0.5) + 'px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('💰', size / 2, size / 2);
+    }
+    function download(canvas, filename) {
+      drawIcon(canvas);
+      var a = document.createElement('a');
+      a.download = filename;
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    }
+    document.getElementById('c192').width = 192;
+    document.getElementById('c192').height = 192;
+    document.getElementById('c512').width = 512;
+    document.getElementById('c512').height = 512;
+    drawIcon(document.getElementById('c192'));
+    drawIcon(document.getElementById('c512'));
+    document.getElementById('dl192').onclick = function () { download(document.getElementById('c192'), 'icon-192.png'); };
+    document.getElementById('dl512').onclick = function () { download(document.getElementById('c512'), 'icon-512.png'); };
+  </script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="hil">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#c4b5fd">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="EsnoPera">
+  <title>EsnoPera</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Main Screen -->
+    <header class="header">
+      <h1 class="header-title">💰 EsnoPera</h1>
+      <div class="header-actions">
+        <button type="button" class="btn-header-icon" id="viewInsightsBtn" aria-label="Insights">📊 Insights</button>
+        <button type="button" class="btn-header-icon" id="viewHistoryBtn" aria-label="Lista">📋 Lista</button>
+      </div>
+    </header>
+
+    <!-- Balance Section (balance + add money only) -->
+    <section class="balance-section">
+      <p class="balance-label">Nabilin</p>
+      <p class="balance-amount" id="balanceDisplay">₱0</p>
+      <button type="button" class="btn btn-allowance" id="addMoneyBtn">Dugangi Kwarta</button>
+    </section>
+
+    <!-- Quick Add -->
+    <section class="quick-add-section">
+      <h2 class="quick-add-title">Dali Idagdag</h2>
+      <div class="quick-add-grid" id="quickAddGrid">
+        <!-- Filled by script from preset list -->
+      </div>
+    </section>
+
+    <!-- Custom + Borrow (same size as quick add) -->
+    <section class="action-row">
+      <button type="button" class="quick-add-btn action-chip" id="addExpenseBtn">
+        <span class="quick-add-emoji">➕</span>
+        <span class="quick-add-label">Ibán nga Gasto</span>
+      </button>
+      <button type="button" class="quick-add-btn action-chip action-chip-borrow" id="addBorrowBtn">
+        <span class="quick-add-emoji">🤝</span>
+        <span class="quick-add-label">Idagdag Utang</span>
+      </button>
+    </section>
+
+    <!-- Add Money Modal -->
+    <div class="modal" id="addMoneyModal">
+      <div class="modal-content">
+        <h2>Dugangi Kwarta</h2>
+        <p class="modal-hint">Pila ang idugang? (e.g. 500)</p>
+        <input type="number" id="addMoneyInput" placeholder="₱0" min="0" step="0.01">
+        <div class="modal-buttons">
+          <button type="button" class="btn btn-outline" id="cancelAddMoney">Cancel</button>
+          <button type="button" class="btn btn-primary" id="saveAddMoney">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Expense Modal -->
+    <div class="modal" id="expenseModal">
+      <div class="modal-content modal-expense">
+        <h2>Idagdag Gasto</h2>
+        <p class="modal-hint">Pwede mo baguhon ang emoji/ngalan, dayon sulod ang kantidad.</p>
+        <input type="text" id="expenseEmoji" placeholder="Emoji" maxlength="4">
+        <input type="text" id="expenseName" placeholder="Ngaran sang gasto">
+        <input type="number" id="expenseAmount" placeholder="Kantidad (₱)" min="0" step="0.01" inputmode="decimal">
+        <p class="expense-date-hint" id="expenseDateHint"></p>
+        <div class="amount-chips" id="amountChips">
+          <button type="button" class="chip" data-amount="50">₱50</button>
+          <button type="button" class="chip" data-amount="100">₱100</button>
+          <button type="button" class="chip" data-amount="150">₱150</button>
+          <button type="button" class="chip" data-amount="200">₱200</button>
+          <button type="button" class="chip" data-amount="300">₱300</button>
+          <button type="button" class="chip" data-amount="500">₱500</button>
+        </div>
+        <div class="modal-buttons">
+          <button type="button" class="btn btn-outline" id="cancelExpense">Cancel</button>
+          <button type="button" class="btn btn-primary" id="saveExpense">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Borrow Modal -->
+    <div class="modal" id="borrowModal">
+      <div class="modal-content">
+        <h2>Idagdag Utang</h2>
+        <p class="modal-hint">Sin-o nangutang sa imo?</p>
+        <input type="text" id="borrowEmoji" placeholder="Emoji (e.g. 🤝)" maxlength="4">
+        <input type="text" id="borrowPerson" placeholder="Ngaran (e.g. Juan)">
+        <input type="number" id="borrowAmount" placeholder="Kantidad (e.g. 500)" min="0" step="0.01">
+        <div class="modal-buttons">
+          <button type="button" class="btn btn-outline" id="cancelBorrow">Cancel</button>
+          <button type="button" class="btn btn-primary" id="saveBorrow">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Record Payment Modal (partial payment for utang) -->
+    <div class="modal" id="paymentModal">
+      <div class="modal-content">
+        <h2>Record Bayad</h2>
+        <p class="modal-hint" id="paymentModalHint">Pila ang ginbayad?</p>
+        <input type="number" id="paymentAmountInput" placeholder="Kantidad (₱)" min="0" step="0.01">
+        <div class="modal-buttons">
+          <button type="button" class="btn btn-outline" id="cancelPayment">Cancel</button>
+          <button type="button" class="btn btn-primary" id="savePayment">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Insights Screen (separate page) -->
+    <div class="overlay-screen" id="insightsScreen">
+      <div class="overlay-header">
+        <h2>📊 Insights</h2>
+        <button type="button" class="btn btn-close" id="closeInsights">✕ Sira</button>
+      </div>
+      <div class="insights-page-content">
+        <div class="insights-stats" id="insightsStats"></div>
+        <!-- Pie chart for category breakdown -->
+        <div class="pie-chart-wrap" id="pieChartWrap">
+          <canvas id="pieChart" width="280" height="280" aria-label="Pie chart sang gastos"></canvas>
+          <div class="pie-tooltip" id="pieTooltip"></div>
+        </div>
+        <div class="pie-legend" id="pieLegend"></div>
+      </div>
+    </div>
+
+    <!-- History Screen -->
+    <div class="overlay-screen" id="historyScreen">
+      <div class="overlay-header">
+        <h2>📋 Lista</h2>
+        <button type="button" class="btn btn-close" id="closeHistory">✕ Sira</button>
+      </div>
+      <div class="history-list" id="historyList">
+        <!-- Filled by JavaScript -->
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
