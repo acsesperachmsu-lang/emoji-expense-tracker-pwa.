@@ -160,7 +160,7 @@ function closeAddMoneyModal() {
 function saveAddMoneyHandler() {
   const value = parseFloat(addMoneyInput.value);
   if (isNaN(value) || value <= 0) {
-    alert('Sulod sang balido nga kantidad (sobra sa 0).');
+    alert('Butang anay valid nga amount (dapat sobra 0).');
     return;
   }
   balance += value;
@@ -211,6 +211,7 @@ function buildQuickAddButtons() {
     var pressTimer = null;
     function startPress() {
       if (pressTimer !== null) return;
+      btn.classList.add('deleting');
       pressTimer = setTimeout(function () {
         pressTimer = null;
         longPressFired = true;
@@ -222,6 +223,7 @@ function buildQuickAddButtons() {
         clearTimeout(pressTimer);
         pressTimer = null;
       }
+      btn.classList.remove('deleting');
     }
     btn.addEventListener('mousedown', startPress);
     btn.addEventListener('touchstart', startPress);
@@ -243,7 +245,7 @@ function saveExpenseHandler() {
   const amount = parseFloat(expenseAmount.value);
 
   if (isNaN(amount) || amount < 0) {
-    alert('Sulod sang balido nga kantidad.');
+    alert('Butang anay valid nga amount sang gasto.');
     return;
   }
 
@@ -291,10 +293,10 @@ function tryRemovePresetIcon(emoji, name) {
     return p.emoji === emoji && p.name === name;
   });
   if (!isCustom) {
-    alert('Ang ini nga preset built-in kag indi makasiled. Pero pwede ka magdugang kag mag-delete sang imo kaugalingon nga presets.');
+    alert('Ini nga preset built-in na, indi pwede i-delete. Pero pwede ka gihapon maghimo kag mag-delete sang imo kaugalingon nga presets.');
     return;
   }
-  var ok = confirm('Kuhaon ini nga Dali Idagdag icon (' + emoji + ' ' + name + ')?');
+  var ok = confirm('Kuhaon gid naton ni nga Dali Idagdag icon (' + emoji + ' ' + name + ')?');
   if (!ok) return;
 
   PRESET_EXPENSES = PRESET_EXPENSES.filter(function (p) {
@@ -307,6 +309,12 @@ function tryRemovePresetIcon(emoji, name) {
     localStorage.setItem(STORAGE_KEYS.presets, JSON.stringify(customPresets));
   } catch (e) {
     // ignore storage errors
+  }
+  // remove any visual delete state
+  if (quickAddGrid) {
+    quickAddGrid.querySelectorAll('.quick-add-btn').forEach(function (btn) {
+      btn.classList.remove('deleting');
+    });
   }
   buildQuickAddButtons();
 }
@@ -330,7 +338,7 @@ function saveBorrowHandler() {
   const amount = parseFloat(borrowAmount.value);
 
   if (isNaN(amount) || amount < 0) {
-    alert('Sulod sang balido nga kantidad.');
+    alert('Butang anay valid nga amount sang utang.');
     return;
   }
 
@@ -378,7 +386,7 @@ function savePaymentHandler() {
   if (!b) return;
   var amt = parseFloat(paymentAmountInput.value);
   if (isNaN(amt) || amt <= 0) {
-    alert('Sulod sang balido nga kantidad.');
+    alert('Butang anay valid nga amount sang bayad.');
     return;
   }
   var remaining = b.amount - b.paidBack;
@@ -552,21 +560,21 @@ function renderInsightsSection() {
   // Insights summary rows
   if (insightsStats) {
     var html = '';
-    html += '<div class="insight-row"><span class="insight-mini-emoji">🍅</span><span class="insight-mini-label">Total Nagasto</span><span class="insight-mini-value">₱' + formatNumber(spent) + '</span></div>';
-    html += '<div class="insight-row"><span class="insight-mini-emoji">📄</span><span class="insight-mini-label">Pila ka Gasto</span><span class="insight-mini-value">' + expenses.length + '</span></div>';
+    html += '<div class="insight-row"><span class="insight-mini-emoji">🍅</span><span class="insight-mini-label">Total nagasto</span><span class="insight-mini-value">₱' + formatNumber(spent) + '</span></div>';
+    html += '<div class="insight-row"><span class="insight-mini-emoji">📄</span><span class="insight-mini-label">Pila ka gastos</span><span class="insight-mini-value">' + expenses.length + '</span></div>';
     if (total_added > 0) {
-      html += '<div class="insight-row"><span class="insight-mini-emoji">📊</span><span class="insight-mini-label">Nagamit na</span><span class="insight-mini-value">' + percentUsed + '%</span></div>';
+      html += '<div class="insight-row"><span class="insight-mini-emoji">📊</span><span class="insight-mini-label">% sang allowance nga nagamit</span><span class="insight-mini-value">' + percentUsed + '%</span></div>';
       html += '<div class="progress-bar progress-bar-inline"><div class="progress-fill" style="width:' + percentUsed + '%"></div></div>';
     }
-    html += '<div class="insight-row"><span class="insight-mini-emoji">🤝</span><span class="insight-mini-label">Utang</span><span class="insight-mini-value">₱' + formatNumber(borrowStats.total) + ' (₱' + formatNumber(borrowStats.unpaid) + ' wala pa)</span></div>';
+    html += '<div class="insight-row"><span class="insight-mini-emoji">🤝</span><span class="insight-mini-label">Total utang</span><span class="insight-mini-value">₱' + formatNumber(borrowStats.total) + ' (₱' + formatNumber(borrowStats.unpaid) + ' wala pa nabayad)</span></div>';
 
-    // Pinakadako nga Gasto
+    // Pinakadako nga gasto
     if (highest) {
-      html += '<div class="insight-row"><span class="insight-mini-emoji">' + escapeHtml(highest.emoji) + '</span><span class="insight-mini-label">Pinakadako nga Gasto</span><span class="insight-mini-value">₱' + formatNumber(highest.amount) + ' (' + escapeHtml(highest.name) + ')</span></div>';
+      html += '<div class="insight-row"><span class="insight-mini-emoji">' + escapeHtml(highest.emoji) + '</span><span class="insight-mini-label">Pinakadako mong gasto</span><span class="insight-mini-value">₱' + formatNumber(highest.amount) + ' (' + escapeHtml(highest.name) + ')</span></div>';
     }
 
     if (expenses.length === 0 && borrows.length === 0) {
-      html = '<p class="empty-insights-inline">Idagdag gastos kag utang para makita. 🌸</p>';
+      html = '<p class="empty-insights-inline">Wala pa data. I-add anay gasto kag utang para may ara ta stats. 🌸</p>';
     }
 
     insightsStats.innerHTML = html;
@@ -601,7 +609,7 @@ function renderInsightsSection() {
 
 // Reset all app data (balance, gastos, utang, custom presets)
 function resetAppData() {
-  var ok = confirm('I-reset tanan data (balance, gastos, utang, presets)? Indi na mabalik.');
+  var ok = confirm('Sure ka gid nga i-reset ta tanan? Maklear tanan balance, gastos, utang kag presets. Di na ni mabalik ha.');
   if (!ok) return;
   try {
     localStorage.clear();
@@ -642,7 +650,7 @@ function renderHistory() {
     .sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
 
   if (expenseEntries.length === 0 && borrowEntries.length === 0) {
-    historyList.innerHTML = '<p class="empty-history">Wala pa gastos ukon utang.<br>Idagdag sa punta!</p>';
+    historyList.innerHTML = '<p class="empty-history">Wala pa gastos kag utang.<br>I-add anay sa baba. 😄</p>';
     return;
   }
 
@@ -706,7 +714,7 @@ function renderHistory() {
   if (expenseEntries.length > 0) {
     const header = document.createElement('h3');
     header.className = 'history-section-title';
-    header.textContent = 'Mga Gasto';
+    header.textContent = 'Mga gastos';
     historyList.appendChild(header);
     expenseEntries.forEach(appendExpenseItem);
   }
@@ -715,7 +723,7 @@ function renderHistory() {
   if (borrowEntries.length > 0) {
     const header = document.createElement('h3');
     header.className = 'history-section-title';
-    header.textContent = 'Mga Utang';
+    header.textContent = 'Mga utang';
     historyList.appendChild(header);
     borrowEntries.forEach(appendBorrowItem);
   }
@@ -800,6 +808,7 @@ if (resetAppBtn) resetAppBtn.addEventListener('click', resetAppData);
 // ========== REGISTER SERVICE WORKER (for PWA / offline) ==========
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
+    document.body.classList.add('app-ready');
     navigator.serviceWorker.register('./service-worker.js').then(function () {
       // Registration worked
     }).catch(function () {

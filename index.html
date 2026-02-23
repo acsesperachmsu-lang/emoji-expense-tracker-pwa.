@@ -21,21 +21,21 @@
     <header class="header">
       <h1 class="header-title">💰 EsnoPera</h1>
       <div class="header-actions">
-        <button type="button" class="btn-header-icon" id="viewInsightsBtn" aria-label="Insights">📊 Insights</button>
-        <button type="button" class="btn-header-icon" id="viewHistoryBtn" aria-label="Lista">📋 Lista</button>
+        <button type="button" class="btn-header-icon" id="viewInsightsBtn" aria-label="Insights">📊 Stats</button>
+        <button type="button" class="btn-header-icon" id="viewHistoryBtn" aria-label="Lista">📋 Lista ko</button>
       </div>
     </header>
 
     <!-- Balance Section (balance + add money only) -->
     <section class="balance-section">
-      <p class="balance-label">Nabilin</p>
+      <p class="balance-label">Bilhin nga kwarta</p>
       <p class="balance-amount" id="balanceDisplay">₱0</p>
-      <button type="button" class="btn btn-allowance" id="addMoneyBtn">Dugangi Kwarta</button>
+      <button type="button" class="btn btn-allowance" id="addMoneyBtn">Dugang kwarta</button>
     </section>
 
     <!-- Quick Add -->
     <section class="quick-add-section">
-      <h2 class="quick-add-title">Dali Idagdag</h2>
+      <h2 class="quick-add-title">Dali lang i-add</h2>
       <div class="quick-add-grid" id="quickAddGrid">
         <!-- Filled by script from preset list -->
       </div>
@@ -45,19 +45,19 @@
     <section class="action-row">
       <button type="button" class="quick-add-btn action-chip" id="addExpenseBtn">
         <span class="quick-add-emoji">➕</span>
-        <span class="quick-add-label">Ibán nga Gasto</span>
+        <span class="quick-add-label">Iba pa nga gasto</span>
       </button>
       <button type="button" class="quick-add-btn action-chip action-chip-borrow" id="addBorrowBtn">
         <span class="quick-add-emoji">🤝</span>
-        <span class="quick-add-label">Idagdag Utang</span>
+        <span class="quick-add-label">I-add utang</span>
       </button>
     </section>
 
     <!-- Add Money Modal -->
     <div class="modal" id="addMoneyModal">
       <div class="modal-content">
-        <h2>Dugangi Kwarta</h2>
-        <p class="modal-hint">Pila ang idugang? (e.g. 500)</p>
+        <h2>Dugang kwarta</h2>
+        <p class="modal-hint">Pila imo i-sulod? (e.g. 500)</p>
         <input type="number" id="addMoneyInput" placeholder="₱0" min="0" step="0.01">
         <div class="modal-buttons">
           <button type="button" class="btn btn-outline" id="cancelAddMoney">Cancel</button>
@@ -69,11 +69,11 @@
     <!-- Add Expense Modal -->
     <div class="modal" id="expenseModal">
       <div class="modal-content modal-expense">
-        <h2>Idagdag Gasto</h2>
-        <p class="modal-hint">Pwede mo baguhon ang emoji/ngalan, dayon sulod ang kantidad.</p>
+        <h2>I-add gasto</h2>
+        <p class="modal-hint">Pwede mo usbon emoji/kahilan, tapos butang amount.</p>
         <input type="text" id="expenseEmoji" placeholder="Emoji" maxlength="4">
-        <input type="text" id="expenseName" placeholder="Ngaran sang gasto">
-        <input type="number" id="expenseAmount" placeholder="Kantidad (₱)" min="0" step="0.01" inputmode="decimal">
+        <input type="text" id="expenseName" placeholder="Ngaran sang gasto (e.g. snacks)">
+        <input type="number" id="expenseAmount" placeholder="Tag pila ni? (₱)" min="0" step="0.01" inputmode="decimal">
         <p class="expense-date-hint" id="expenseDateHint"></p>
         <div class="amount-chips" id="amountChips">
           <button type="button" class="chip" data-amount="50">₱50</button>
@@ -93,11 +93,11 @@
     <!-- Add Borrow Modal -->
     <div class="modal" id="borrowModal">
       <div class="modal-content">
-        <h2>Idagdag Utang</h2>
-        <p class="modal-hint">Sin-o nangutang sa imo?</p>
+        <h2>I-add utang</h2>
+        <p class="modal-hint">Sin-o naghulam kwarta sa imo?</p>
         <input type="text" id="borrowEmoji" placeholder="Emoji (e.g. 🤝)" maxlength="4">
         <input type="text" id="borrowPerson" placeholder="Ngaran (e.g. Juan)">
-        <input type="number" id="borrowAmount" placeholder="Kantidad (e.g. 500)" min="0" step="0.01">
+        <input type="number" id="borrowAmount" placeholder="Pila gid ginhulam? (e.g. 500)" min="0" step="0.01">
         <div class="modal-buttons">
           <button type="button" class="btn btn-outline" id="cancelBorrow">Cancel</button>
           <button type="button" class="btn btn-primary" id="saveBorrow">Save</button>
@@ -108,9 +108,9 @@
     <!-- Record Payment Modal (partial payment for utang) -->
     <div class="modal" id="paymentModal">
       <div class="modal-content">
-        <h2>Record Bayad</h2>
-        <p class="modal-hint" id="paymentModalHint">Pila ang ginbayad?</p>
-        <input type="number" id="paymentAmountInput" placeholder="Kantidad (₱)" min="0" step="0.01">
+        <h2>Record bayad</h2>
+        <p class="modal-hint" id="paymentModalHint">Pila iya ginbalik?</p>
+        <input type="number" id="paymentAmountInput" placeholder="Pila ni nga bayad? (₱)" min="0" step="0.01">
         <div class="modal-buttons">
           <button type="button" class="btn btn-outline" id="cancelPayment">Cancel</button>
           <button type="button" class="btn btn-primary" id="savePayment">Save</button>
@@ -121,8 +121,8 @@
     <!-- Insights Screen (separate page) -->
     <div class="overlay-screen" id="insightsScreen">
       <div class="overlay-header">
-        <h2>📊 Insights</h2>
-        <button type="button" class="btn btn-close" id="closeInsights">✕ Sira</button>
+        <h2>📊 Stats sang kwarta</h2>
+        <button type="button" class="btn btn-close" id="closeInsights">✕ Close</button>
       </div>
       <div class="insights-page-content">
         <div class="insights-stats" id="insightsStats"></div>
@@ -132,15 +132,15 @@
           <div class="pie-tooltip" id="pieTooltip"></div>
         </div>
         <div class="pie-legend" id="pieLegend"></div>
-        <button type="button" class="btn btn-outline btn-reset" id="resetAppBtn">Reset App (Clear Data)</button>
+        <button type="button" class="btn btn-outline btn-reset" id="resetAppBtn">I-reset App (Clear data)</button>
       </div>
     </div>
 
     <!-- History Screen -->
     <div class="overlay-screen" id="historyScreen">
       <div class="overlay-header">
-        <h2>📋 Lista</h2>
-        <button type="button" class="btn btn-close" id="closeHistory">✕ Sira</button>
+        <h2>📋 Lista sang tanan</h2>
+        <button type="button" class="btn btn-close" id="closeHistory">✕ Close</button>
       </div>
       <div class="history-list" id="historyList">
         <!-- Filled by JavaScript -->
