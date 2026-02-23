@@ -515,7 +515,7 @@ body.app-ready .app {
 }
 
 .action-chip-borrow {
-  display: none; /* Hide old Idagdag Utang chip; use quick-add tile instead */
+  /* show borrow chip same size as others */
 }
 
 .action-chip-borrow .quick-add-emoji {
