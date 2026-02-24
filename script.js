@@ -823,34 +823,39 @@ function renderHistory() {
       '</div>';
     historyList.appendChild(div);
 
-    // basic swipe detection (left to show actions, right to hide)
-    var startX = 0;
-    var threshold = 30;
+    // long-press toggle for actions (mobile + desktop)
+    var pressTimer = null;
+    var longPressDelay = 500;
+
+    function startLongPress() {
+      if (pressTimer !== null) return;
+      pressTimer = setTimeout(function () {
+        pressTimer = null;
+        div.classList.toggle('show-actions');
+      }, longPressDelay);
+    }
+
+    function cancelLongPress() {
+      if (pressTimer !== null) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+      }
+    }
+
     div.addEventListener('touchstart', function (ev) {
       if (!ev.touches || !ev.touches.length) return;
-      startX = ev.touches[0].clientX;
+      startLongPress();
     });
-    div.addEventListener('touchend', function (ev) {
-      if (!ev.changedTouches || !ev.changedTouches.length) return;
-      var dx = ev.changedTouches[0].clientX - startX;
-      if (dx > threshold) {
-        div.classList.add('show-actions');
-      } else if (dx < -threshold) {
-        div.classList.remove('show-actions');
-      }
-    });
-    // mouse (desktop) support
+    div.addEventListener('touchend', cancelLongPress);
+    div.addEventListener('touchcancel', cancelLongPress);
+
     div.addEventListener('mousedown', function (ev) {
-      startX = ev.clientX;
+      // only respond to primary button
+      if (ev.button !== 0) return;
+      startLongPress();
     });
-    div.addEventListener('mouseup', function (ev) {
-      var dx = ev.clientX - startX;
-      if (dx > threshold) {
-        div.classList.add('show-actions');
-      } else if (dx < -threshold) {
-        div.classList.remove('show-actions');
-      }
-    });
+    div.addEventListener('mouseup', cancelLongPress);
+    div.addEventListener('mouseleave', cancelLongPress);
   }
 
   function appendIncomeItem(entry) {
@@ -915,32 +920,37 @@ function renderHistory() {
 
     historyList.appendChild(div);
 
-    var startX = 0;
-    var threshold = 30;
+    var pressTimer = null;
+    var longPressDelay = 500;
+
+    function startLongPress() {
+      if (pressTimer !== null) return;
+      pressTimer = setTimeout(function () {
+        pressTimer = null;
+        div.classList.toggle('show-actions');
+      }, longPressDelay);
+    }
+
+    function cancelLongPress() {
+      if (pressTimer !== null) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+      }
+    }
+
     div.addEventListener('touchstart', function (ev) {
       if (!ev.touches || !ev.touches.length) return;
-      startX = ev.touches[0].clientX;
+      startLongPress();
     });
-    div.addEventListener('touchend', function (ev) {
-      if (!ev.changedTouches || !ev.changedTouches.length) return;
-      var dx = ev.changedTouches[0].clientX - startX;
-      if (dx > threshold) {
-        div.classList.add('show-actions');
-      } else if (dx < -threshold) {
-        div.classList.remove('show-actions');
-      }
-    });
+    div.addEventListener('touchend', cancelLongPress);
+    div.addEventListener('touchcancel', cancelLongPress);
+
     div.addEventListener('mousedown', function (ev) {
-      startX = ev.clientX;
+      if (ev.button !== 0) return;
+      startLongPress();
     });
-    div.addEventListener('mouseup', function (ev) {
-      var dx = ev.clientX - startX;
-      if (dx > threshold) {
-        div.classList.add('show-actions');
-      } else if (dx < -threshold) {
-        div.classList.remove('show-actions');
-      }
-    });
+    div.addEventListener('mouseup', cancelLongPress);
+    div.addEventListener('mouseleave', cancelLongPress);
   }
 
   // Expenses section (with per-day headers above items)
