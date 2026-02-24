@@ -38,6 +38,7 @@ let total_added = 0;
 let expenses = [];
 let borrows = [];
 let incomes = [];
+let editingExpenseId = null;
 
 // ========== DOM ELEMENTS ==========
 const balanceDisplay = document.getElementById('balanceDisplay');
@@ -201,6 +202,7 @@ function saveAddMoneyHandler() {
 // ========== ADD EXPENSE ==========
 // Open with optional preset (emoji + name) for quick-add. Date is automatic from phone.
 function openExpenseModal(presetEmoji, presetName) {
+  editingExpenseId = null;
   expenseEmoji.value = presetEmoji !== undefined ? presetEmoji : '';
   expenseName.value = presetName !== undefined ? presetName : '';
   if (expenseNote) expenseNote.value = '';
@@ -266,6 +268,7 @@ function buildQuickAddButtons() {
 
 function closeExpenseModal() {
   expenseModal.classList.remove('show');
+  editingExpenseId = null;
 }
 
 function saveExpenseHandler() {
@@ -279,20 +282,43 @@ function saveExpenseHandler() {
     return;
   }
 
+  // Prevent creating a new gasto that is larger than current balance
+  if (editingExpenseId === null && amount > balance) {
+    alert('Hala, kulang kwarta mo para sini nga gasto. 😅 I-check anay \"Bilhin nga kwarta\" bago ka mag-spend.');
+    return;
+  }
+
   // If this is a new custom gasto, remember it as a preset for "Dali Idagdag"
   maybeAddPresetFromExpense(emoji, name);
 
-  const expense = {
-    id: Date.now(),
-    emoji: emoji || '📌',
-    name: name || 'Expense',
-    note: note,
-    amount: amount,
-    date: new Date().toISOString()
-  };
-
-  expenses.push(expense);
-  balance = balance - amount;
+  if (editingExpenseId !== null) {
+    var existing = expenses.find(function (x) { return x.id === editingExpenseId; });
+    if (existing) {
+      var diff = amount - existing.amount; // extra spend vs old value
+      if (diff > 0 && diff > balance) {
+        alert('Kung i-edit mo ni amo sini, malapas na gid sa bilhin nga kwarta. 😅 Gamaya gamay lang.');
+        return;
+      }
+      balance -= diff; // can be negative (refund)
+      existing.emoji = emoji || '📌';
+      existing.name = name || 'Expense';
+      existing.note = note;
+      existing.amount = amount;
+      // keep original date
+    }
+    editingExpenseId = null;
+  } else {
+    const expense = {
+      id: Date.now(),
+      emoji: emoji || '📌',
+      name: name || 'Expense',
+      note: note,
+      amount: amount,
+      date: new Date().toISOString()
+    };
+    expenses.push(expense);
+    balance = balance - amount;
+  }
   saveData();
   updateBalanceDisplay();
   closeExpenseModal();
@@ -465,8 +491,8 @@ function getBorrowStats() {
 function getCategoryBreakdown() {
   var byKey = {};
   expenses.forEach(function (e) {
-    var key = e.emoji + ' ' + e.name;
-    if (!byKey[key]) byKey[key] = { key: key, emoji: e.emoji, name: e.name, amount: 0 };
+    var key = e.name || 'Expense';
+    if (!byKey[key]) byKey[key] = { key: key, emoji: e.emoji, name: e.name || 'Expense', amount: 0 };
     byKey[key].amount += e.amount;
   });
   return Object.keys(byKey)
@@ -579,7 +605,7 @@ function renderInsightsSection() {
   // Build map from category key to list of expenses for detail view
   var expensesByCategory = {};
   expenses.forEach(function (e) {
-    var key = e.emoji + ' ' + e.name;
+    var key = e.name || 'Expense';
     if (!expensesByCategory[key]) expensesByCategory[key] = [];
     expensesByCategory[key].push(e);
   });
@@ -631,7 +657,7 @@ function renderInsightsSection() {
     if (categoryDetail) categoryDetail.innerHTML = '';
     categories.forEach(function (c, i) {
       var pct = total_added > 0 ? ((c.amount / total_added) * 100).toFixed(1) : '0';
-      leg += '<div class="pie-legend-item" data-index="' + i + '" data-key="' + escapeHtml(c.key) + '"><span class="pie-legend-dot" style="background:' + PIE_COLORS[i % PIE_COLORS.length] + '"></span><span class="pie-legend-label">' + escapeHtml(c.emoji + ' ' + c.name) + '</span><span class="pie-legend-pct">' + pct + '%</span></div>';
+      leg += '<div class="pie-legend-item" data-index="' + i + '" data-key="' + escapeHtml(c.key) + '"><span class="pie-legend-dot" style="background:' + PIE_COLORS[i % PIE_COLORS.length] + '"></span><span class="pie-legend-label">' + escapeHtml((c.emoji || '') + ' ' + c.name) + '</span><span class="pie-legend-pct">' + pct + '%</span></div>';
     });
     pieLegend.innerHTML = leg;
 
@@ -754,17 +780,55 @@ function renderHistory() {
     div.className = 'history-item expense';
     const e = entry.data;
     var noteHtml = e.note ? '<div class="item-note">' + escapeHtml(e.note) + '</div>' : '';
+    div.dataset.expenseId = e.id;
     div.innerHTML =
-      '<div class="item-left">' +
-        '<span class="item-emoji">' + escapeHtml(e.emoji) + '</span>' +
-        '<div class="item-details">' +
-          '<div class="item-title">' + escapeHtml(e.name) + '</div>' +
-          noteHtml +
-          '<div class="item-date">' + formatDate(e.date) + '</div>' +
+      '<div class="item-swipe-inner">' +
+        '<div class="item-main">' +
+          '<div class="item-left">' +
+            '<span class="item-emoji">' + escapeHtml(e.emoji) + '</span>' +
+            '<div class="item-details">' +
+              '<div class="item-title">' + escapeHtml(e.name) + '</div>' +
+              noteHtml +
+              '<div class="item-date">' + formatDate(e.date) + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<span class="item-amount expense-amount">- ₱' + formatNumber(e.amount) + '</span>' +
         '</div>' +
-      '</div>' +
-      '<span class="item-amount expense-amount">- ₱' + formatNumber(e.amount) + '</span>';
+        '<div class="item-actions">' +
+          '<button type="button" class="btn-action btn-edit-expense">Edit</button>' +
+          '<button type="button" class="btn-action btn-delete-expense">Delete</button>' +
+        '</div>' +
+      '</div>';
     historyList.appendChild(div);
+
+    // basic swipe detection (left to show actions, right to hide)
+    var startX = 0;
+    var threshold = 30;
+    div.addEventListener('touchstart', function (ev) {
+      if (!ev.touches || !ev.touches.length) return;
+      startX = ev.touches[0].clientX;
+    });
+    div.addEventListener('touchend', function (ev) {
+      if (!ev.changedTouches || !ev.changedTouches.length) return;
+      var dx = ev.changedTouches[0].clientX - startX;
+      if (dx < -threshold) {
+        div.classList.add('show-actions');
+      } else if (dx > threshold) {
+        div.classList.remove('show-actions');
+      }
+    });
+    // mouse (desktop) support
+    div.addEventListener('mousedown', function (ev) {
+      startX = ev.clientX;
+    });
+    div.addEventListener('mouseup', function (ev) {
+      var dx = ev.clientX - startX;
+      if (dx < -threshold) {
+        div.classList.add('show-actions');
+      } else if (dx > threshold) {
+        div.classList.remove('show-actions');
+      }
+    });
   }
 
   function appendIncomeItem(entry) {
@@ -892,6 +956,45 @@ function renderHistory() {
       const id = parseInt(el.getAttribute('data-borrow-id'), 10);
       var b = borrows.find(function (x) { return x.id === id; });
       if (b && (b.paidBack || 0) < b.amount) markBorrowPaid(id);
+    });
+  });
+
+  // Edit/delete gastos (expenses)
+  historyList.querySelectorAll('.btn-edit-expense').forEach(function (btn) {
+    btn.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      const card = btn.closest('.history-item.expense');
+      if (!card) return;
+      const id = parseInt(card.dataset.expenseId, 10);
+      var e = expenses.find(function (x) { return x.id === id; });
+      if (!e) return;
+      editingExpenseId = id;
+      expenseEmoji.value = e.emoji || '📌';
+      expenseName.value = e.name || 'Expense';
+      if (expenseNote) expenseNote.value = e.note || '';
+      expenseAmount.value = e.amount;
+      if (expenseDateHint) expenseDateHint.textContent = 'Gin-edit mo ang record sang ' + formatDate(e.date);
+      expenseModal.classList.add('show');
+      setTimeout(function () { expenseAmount.focus(); }, 100);
+    });
+  });
+
+  historyList.querySelectorAll('.btn-delete-expense').forEach(function (btn) {
+    btn.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      const card = btn.closest('.history-item.expense');
+      if (!card) return;
+      const id = parseInt(card.dataset.expenseId, 10);
+      var idx = expenses.findIndex(function (x) { return x.id === id; });
+      if (idx === -1) return;
+      var e = expenses[idx];
+      var ok = confirm('Sure ka gid i-delete ni nga gasto? Indi na ni mabalik. 😬');
+      if (!ok) return;
+      balance += e.amount;
+      expenses.splice(idx, 1);
+      saveData();
+      updateBalanceDisplay();
+      renderHistory();
     });
   });
 }
