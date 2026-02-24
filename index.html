@@ -57,8 +57,10 @@
     <div class="modal" id="addMoneyModal">
       <div class="modal-content">
         <h2>Dugang kwarta</h2>
-        <p class="modal-hint">Pila imo i-sulod? (e.g. 500)</p>
-        <input type="number" id="addMoneyInput" placeholder="₱0" min="0" step="0.01">
+        <p class="modal-hint">Diin halin ni nga kwarta kag pila? (e.g. allowance, sweldo)</p>
+        <input type="text" id="incomeEmoji" placeholder="Emoji (e.g. 💸)" maxlength="4">
+        <input type="text" id="incomeName" placeholder="Ngaran sang source (e.g. Allowance, Sweldo)">
+        <input type="number" id="addMoneyInput" placeholder="Pila ang sulod? (₱)" min="0" step="0.01">
         <div class="modal-buttons">
           <button type="button" class="btn btn-outline" id="cancelAddMoney">Cancel</button>
           <button type="button" class="btn btn-primary" id="saveAddMoney">Save</button>

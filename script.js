@@ -9,6 +9,7 @@ const STORAGE_KEYS = {
   total_added: 'expense_tracker_total_added',
   expenses: 'expense_tracker_expenses',
   borrows: 'expense_tracker_borrows',
+  incomes: 'expense_tracker_incomes',
   presets: 'expense_tracker_presets'
 };
 
@@ -36,6 +37,7 @@ let balance = 0;
 let total_added = 0;
 let expenses = [];
 let borrows = [];
+let incomes = [];
 
 // ========== DOM ELEMENTS ==========
 const balanceDisplay = document.getElementById('balanceDisplay');
@@ -46,6 +48,8 @@ const viewHistoryBtn = document.getElementById('viewHistoryBtn');
 
 const addMoneyModal = document.getElementById('addMoneyModal');
 const addMoneyInput = document.getElementById('addMoneyInput');
+const incomeEmoji = document.getElementById('incomeEmoji');
+const incomeName = document.getElementById('incomeName');
 const cancelAddMoney = document.getElementById('cancelAddMoney');
 const saveAddMoney = document.getElementById('saveAddMoney');
 
@@ -96,6 +100,7 @@ function loadData() {
     const savedTotalAdded = localStorage.getItem(STORAGE_KEYS.total_added);
     const savedExpenses = localStorage.getItem(STORAGE_KEYS.expenses);
     const savedBorrows = localStorage.getItem(STORAGE_KEYS.borrows);
+    const savedIncomes = localStorage.getItem(STORAGE_KEYS.incomes);
     const savedPresets = localStorage.getItem(STORAGE_KEYS.presets);
 
     if (savedBalance !== null) balance = parseFloat(savedBalance) || 0;
@@ -106,6 +111,9 @@ function loadData() {
       borrows.forEach(function (b) {
         if (b.paidBack === undefined) b.paidBack = b.paid ? b.amount : 0;
       });
+    }
+    if (savedIncomes) {
+      incomes = JSON.parse(savedIncomes);
     }
     if (savedPresets) {
       try {
@@ -133,6 +141,7 @@ function saveData() {
     localStorage.setItem(STORAGE_KEYS.total_added, String(total_added));
     localStorage.setItem(STORAGE_KEYS.expenses, JSON.stringify(expenses));
     localStorage.setItem(STORAGE_KEYS.borrows, JSON.stringify(borrows));
+    localStorage.setItem(STORAGE_KEYS.incomes, JSON.stringify(incomes));
   } catch (e) {
     console.warn('Could not save data:', e);
   }
@@ -151,9 +160,15 @@ function formatNumber(num) {
 
 // ========== ADD MONEY ==========
 function openAddMoneyModal() {
+  if (incomeEmoji) incomeEmoji.value = '💸';
+  if (incomeName) incomeName.value = '';
   addMoneyInput.value = '';
   addMoneyModal.classList.add('show');
-  addMoneyInput.focus();
+  if (incomeName) {
+    incomeName.focus();
+  } else {
+    addMoneyInput.focus();
+  }
 }
 
 function closeAddMoneyModal() {
@@ -161,11 +176,21 @@ function closeAddMoneyModal() {
 }
 
 function saveAddMoneyHandler() {
+  const emoji = incomeEmoji ? (incomeEmoji.value || '💸').trim() : '💸';
+  const name = incomeName ? (incomeName.value || 'Income').trim() : 'Income';
   const value = parseFloat(addMoneyInput.value);
   if (isNaN(value) || value <= 0) {
     alert('Butang anay valid nga amount (dapat sobra 0).');
     return;
   }
+  const income = {
+    id: Date.now(),
+    emoji: emoji || '💸',
+    name: name || 'Income',
+    amount: value,
+    date: new Date().toISOString()
+  };
+  incomes.push(income);
   balance += value;
   total_added += value;
   saveData();
@@ -687,16 +712,19 @@ function formatDate(isoString) {
 }
 
 function renderHistory() {
-  // Separate expenses and borrows, each sorted by date (newest first)
+  // Separate expenses, incomes and borrows, sorted by date (newest first)
   const expenseEntries = expenses
     .map(function (e) { return { type: 'expense', data: e, date: e.date }; })
     .sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
   const borrowEntries = borrows
     .map(function (b) { return { type: 'borrow', data: b, date: b.date }; })
     .sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+  const incomeEntries = incomes
+    .map(function (i) { return { type: 'income', data: i, date: i.date }; })
+    .sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
 
-  if (expenseEntries.length === 0 && borrowEntries.length === 0) {
-    if (historyList) historyList.innerHTML = '<p class="empty-history">Wala pa gastos kag utang.<br>I-add anay sa baba. 😄</p>';
+  if (expenseEntries.length === 0 && borrowEntries.length === 0 && incomeEntries.length === 0) {
+    if (historyList) historyList.innerHTML = '<p class="empty-history">Wala pa gastos, utang kag sulod nga kwarta.<br>I-add anay sa baba. 😄</p>';
     if (historyDailyTotals) historyDailyTotals.innerHTML = '';
     return;
   }
@@ -736,6 +764,22 @@ function renderHistory() {
         '</div>' +
       '</div>' +
       '<span class="item-amount expense-amount">- ₱' + formatNumber(e.amount) + '</span>';
+    historyList.appendChild(div);
+  }
+
+  function appendIncomeItem(entry) {
+    const div = document.createElement('div');
+    div.className = 'history-item income';
+    const i = entry.data;
+    div.innerHTML =
+      '<div class="item-left">' +
+        '<span class="item-emoji">' + escapeHtml(i.emoji) + '</span>' +
+        '<div class="item-details">' +
+          '<div class="item-title">' + escapeHtml(i.name) + '</div>' +
+          '<div class="item-date">' + formatDate(i.date) + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<span class="item-amount income-amount">+ ₱' + formatNumber(i.amount) + '</span>';
     historyList.appendChild(div);
   }
 
@@ -811,6 +855,15 @@ function renderHistory() {
       }
       appendExpenseItem(entry);
     });
+  }
+
+  // Incomes section
+  if (incomeEntries.length > 0) {
+    const header = document.createElement('h3');
+    header.className = 'history-section-title';
+    header.textContent = 'Sulod nga kwarta (income)';
+    historyList.appendChild(header);
+    incomeEntries.forEach(appendIncomeItem);
   }
 
   // Borrows section

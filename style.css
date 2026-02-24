@@ -1006,6 +1006,10 @@ body.app-ready .app {
   color: var(--danger);
 }
 
+.item-amount.income-amount {
+  color: var(--success);
+}
+
 .item-status {
   font-size: 0.7rem;
   padding: 0.28rem 0.55rem;
