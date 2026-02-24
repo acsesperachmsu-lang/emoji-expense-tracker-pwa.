@@ -957,7 +957,7 @@ body.app-ready .app {
   color: var(--danger);
 }
 
-.history-item.expense.show-actions .item-swipe-inner {
+.history-item.show-actions .item-swipe-inner {
   transform: translateX(-120px);
 }
 

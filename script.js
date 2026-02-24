@@ -39,6 +39,7 @@ let expenses = [];
 let borrows = [];
 let incomes = [];
 let editingExpenseId = null;
+let editingBorrowId = null;
 
 // ========== DOM ELEMENTS ==========
 const balanceDisplay = document.getElementById('balanceDisplay');
@@ -378,6 +379,7 @@ function tryRemovePresetIcon(emoji, name) {
 
 // ========== ADD BORROW ==========
 function openBorrowModal() {
+  editingBorrowId = null;
   borrowEmoji.value = '🤝';
   borrowPerson.value = '';
   borrowAmount.value = '';
@@ -387,6 +389,7 @@ function openBorrowModal() {
 
 function closeBorrowModal() {
   borrowModal.classList.remove('show');
+  editingBorrowId = null;
 }
 
 function saveBorrowHandler() {
@@ -399,18 +402,37 @@ function saveBorrowHandler() {
     return;
   }
 
-  const borrow = {
-    id: Date.now(),
-    emoji: emoji || '🤝',
-    person: person || 'Someone',
-    amount: amount,
-    paidBack: 0,
-    paid: false,
-    date: new Date().toISOString()
-  };
+  if (editingBorrowId !== null) {
+    var b = borrows.find(function (x) { return x.id === editingBorrowId; });
+    if (b) {
+      var oldAmount = b.amount;
+      var paidBack = b.paidBack || 0;
+      // If may bayad na, only allow emoji/person edit, not amount
+      if (paidBack > 0 && amount !== oldAmount) {
+        alert('May bayad na ni nga utang, pwede mo lang usbon emoji/kahilan, indi na amount.');
+      } else if (paidBack === 0 && amount !== oldAmount) {
+        var diff = amount - oldAmount; // extra utang vs old
+        balance -= diff; // same sign as create
+        b.amount = amount;
+      }
+      b.emoji = emoji || '🤝';
+      b.person = person || 'Someone';
+    }
+    editingBorrowId = null;
+  } else {
+    const borrow = {
+      id: Date.now(),
+      emoji: emoji || '🤝',
+      person: person || 'Someone',
+      amount: amount,
+      paidBack: 0,
+      paid: false,
+      date: new Date().toISOString()
+    };
 
-  borrows.push(borrow);
-  balance -= amount;
+    borrows.push(borrow);
+    balance -= amount;
+  }
   saveData();
   updateBalanceDisplay();
   closeBorrowModal();
@@ -811,9 +833,9 @@ function renderHistory() {
     div.addEventListener('touchend', function (ev) {
       if (!ev.changedTouches || !ev.changedTouches.length) return;
       var dx = ev.changedTouches[0].clientX - startX;
-      if (dx < -threshold) {
+      if (dx > threshold) {
         div.classList.add('show-actions');
-      } else if (dx > threshold) {
+      } else if (dx < -threshold) {
         div.classList.remove('show-actions');
       }
     });
@@ -823,9 +845,9 @@ function renderHistory() {
     });
     div.addEventListener('mouseup', function (ev) {
       var dx = ev.clientX - startX;
-      if (dx < -threshold) {
+      if (dx > threshold) {
         div.classList.add('show-actions');
-      } else if (dx > threshold) {
+      } else if (dx < -threshold) {
         div.classList.remove('show-actions');
       }
     });
@@ -869,20 +891,56 @@ function renderHistory() {
         '<button type="button" class="btn-mark-paid" data-borrow-id="' + b.id + '">Mark Bayad</button>' +
         '</div>';
     }
+    div.dataset.borrowId = b.id;
     div.innerHTML =
-      '<div class="item-left">' +
-        '<span class="borrow-checkbox" data-borrow-id="' + b.id + '" aria-label="' + (isFullyPaid ? 'Bayad na' : 'Mark Bayad') + '">' + checkIcon + '</span>' +
-        '<span class="item-emoji">' + escapeHtml(b.emoji) + '</span>' +
-        '<div class="item-details">' +
-          '<div class="item-title"><span class="' + nameClass + '">' + escapeHtml(title) + '</span></div>' +
-          '<div class="item-date">' + formatDate(b.date) + '</div>' +
-          '<span class="borrow-progress">₱' + formatNumber(paidBack) + ' / ₱' + formatNumber(b.amount) + '</span>' +
-          statusHtml +
+      '<div class="item-swipe-inner">' +
+        '<div class="item-main">' +
+          '<div class="item-left">' +
+            '<span class="borrow-checkbox" data-borrow-id="' + b.id + '" aria-label="' + (isFullyPaid ? 'Bayad na' : 'Mark Bayad') + '">' + checkIcon + '</span>' +
+            '<span class="item-emoji">' + escapeHtml(b.emoji) + '</span>' +
+            '<div class="item-details">' +
+              '<div class="item-title"><span class="' + nameClass + '">' + escapeHtml(title) + '</span></div>' +
+              '<div class="item-date">' + formatDate(b.date) + '</div>' +
+              '<span class="borrow-progress">₱' + formatNumber(paidBack) + ' / ₱' + formatNumber(b.amount) + '</span>' +
+              statusHtml +
+            '</div>' +
+          '</div>' +
+          '<span class="item-amount">₱' + formatNumber(b.amount) + '</span>' +
         '</div>' +
-      '</div>' +
-      '<span class="item-amount">₱' + formatNumber(b.amount) + '</span>';
+        '<div class="item-actions">' +
+          '<button type="button" class="btn-action btn-edit-borrow">Edit</button>' +
+          '<button type="button" class="btn-action btn-delete-borrow">Delete</button>' +
+        '</div>' +
+      '</div>';
 
     historyList.appendChild(div);
+
+    var startX = 0;
+    var threshold = 30;
+    div.addEventListener('touchstart', function (ev) {
+      if (!ev.touches || !ev.touches.length) return;
+      startX = ev.touches[0].clientX;
+    });
+    div.addEventListener('touchend', function (ev) {
+      if (!ev.changedTouches || !ev.changedTouches.length) return;
+      var dx = ev.changedTouches[0].clientX - startX;
+      if (dx > threshold) {
+        div.classList.add('show-actions');
+      } else if (dx < -threshold) {
+        div.classList.remove('show-actions');
+      }
+    });
+    div.addEventListener('mousedown', function (ev) {
+      startX = ev.clientX;
+    });
+    div.addEventListener('mouseup', function (ev) {
+      var dx = ev.clientX - startX;
+      if (dx > threshold) {
+        div.classList.add('show-actions');
+      } else if (dx < -threshold) {
+        div.classList.remove('show-actions');
+      }
+    });
   }
 
   // Expenses section (with per-day headers above items)
@@ -992,6 +1050,44 @@ function renderHistory() {
       if (!ok) return;
       balance += e.amount;
       expenses.splice(idx, 1);
+      saveData();
+      updateBalanceDisplay();
+      renderHistory();
+    });
+  });
+
+  // Edit/delete utang
+  historyList.querySelectorAll('.btn-edit-borrow').forEach(function (btn) {
+    btn.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      const card = btn.closest('.history-item.borrow');
+      if (!card) return;
+      const id = parseInt(card.dataset.borrowId, 10);
+      var b = borrows.find(function (x) { return x.id === id; });
+      if (!b) return;
+      editingBorrowId = id;
+      borrowEmoji.value = b.emoji || '🤝';
+      borrowPerson.value = b.person || 'Someone';
+      borrowAmount.value = b.amount;
+      borrowModal.classList.add('show');
+      borrowPerson.focus();
+    });
+  });
+
+  historyList.querySelectorAll('.btn-delete-borrow').forEach(function (btn) {
+    btn.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      const card = btn.closest('.history-item.borrow');
+      if (!card) return;
+      const id = parseInt(card.dataset.borrowId, 10);
+      var idx = borrows.findIndex(function (x) { return x.id === id; });
+      if (idx === -1) return;
+      var b = borrows[idx];
+      var remaining = b.amount - (b.paidBack || 0);
+      var ok = confirm('Sure ka gid i-delete ni nga utang? Kung sala ni nga entry, i-undo ni ang impact sa kwarta mo. 😬');
+      if (!ok) return;
+      balance += remaining;
+      borrows.splice(idx, 1);
       saveData();
       updateBalanceDisplay();
       renderHistory();
