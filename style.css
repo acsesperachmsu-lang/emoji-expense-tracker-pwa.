@@ -515,7 +515,9 @@ body.app-ready .app {
 }
 
 .action-chip-borrow {
-  /* show borrow chip same size as others */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .action-chip-borrow .quick-add-emoji {
@@ -835,6 +837,28 @@ body.app-ready .app {
 }
 
 /* History list */
+.history-daily-totals {
+  margin-bottom: 0.5rem;
+}
+
+.daily-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.3rem 0;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+}
+
+.daily-date {
+  font-weight: 700;
+}
+
+.daily-amount {
+  font-weight: 800;
+  color: var(--text);
+}
+
 .history-list {
   flex: 1;
   overflow-y: auto;
@@ -903,6 +927,11 @@ body.app-ready .app {
   font-weight: 700;
   font-size: 1rem;
   color: var(--text);
+}
+
+.item-note {
+  font-size: 0.8rem;
+  color: var(--text-soft);
 }
 
 .item-date {

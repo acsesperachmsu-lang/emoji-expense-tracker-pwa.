@@ -52,6 +52,7 @@ const saveAddMoney = document.getElementById('saveAddMoney');
 const expenseModal = document.getElementById('expenseModal');
 const expenseEmoji = document.getElementById('expenseEmoji');
 const expenseName = document.getElementById('expenseName');
+const expenseNote = document.getElementById('expenseNote');
 const expenseAmount = document.getElementById('expenseAmount');
 const cancelExpense = document.getElementById('cancelExpense');
 const saveExpense = document.getElementById('saveExpense');
@@ -72,6 +73,7 @@ const savePayment = document.getElementById('savePayment');
 const historyScreen = document.getElementById('historyScreen');
 const historyList = document.getElementById('historyList');
 const closeHistory = document.getElementById('closeHistory');
+const historyDailyTotals = document.getElementById('historyDailyTotals');
 const insightsScreen = document.getElementById('insightsScreen');
 const closeInsights = document.getElementById('closeInsights');
 const viewInsightsBtn = document.getElementById('viewInsightsBtn');
@@ -175,6 +177,7 @@ function saveAddMoneyHandler() {
 function openExpenseModal(presetEmoji, presetName) {
   expenseEmoji.value = presetEmoji !== undefined ? presetEmoji : '';
   expenseName.value = presetName !== undefined ? presetName : '';
+  if (expenseNote) expenseNote.value = '';
   expenseAmount.value = '';
   var now = new Date();
   var dateStr = now.toLocaleDateString('en-PH', {
@@ -242,6 +245,7 @@ function closeExpenseModal() {
 function saveExpenseHandler() {
   const emoji = (expenseEmoji.value || '📌').trim();
   const name = (expenseName.value || 'Expense').trim();
+  const note = expenseNote ? (expenseNote.value || '').trim() : '';
   const amount = parseFloat(expenseAmount.value);
 
   if (isNaN(amount) || amount < 0) {
@@ -256,6 +260,7 @@ function saveExpenseHandler() {
     id: Date.now(),
     emoji: emoji || '📌',
     name: name || 'Expense',
+    note: note,
     amount: amount,
     date: new Date().toISOString()
   };
@@ -650,8 +655,35 @@ function renderHistory() {
     .sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
 
   if (expenseEntries.length === 0 && borrowEntries.length === 0) {
-    historyList.innerHTML = '<p class="empty-history">Wala pa gastos kag utang.<br>I-add anay sa baba. 😄</p>';
+    if (historyList) historyList.innerHTML = '<p class="empty-history">Wala pa gastos kag utang.<br>I-add anay sa baba. 😄</p>';
+    if (historyDailyTotals) historyDailyTotals.innerHTML = '';
     return;
+  }
+
+  // Daily totals (expenses only)
+  if (historyDailyTotals) {
+    if (expenses.length === 0) {
+      historyDailyTotals.innerHTML = '';
+    } else {
+      var byDay = {};
+      expenses.forEach(function (e) {
+        if (!e.date) return;
+        var d = new Date(e.date);
+        if (isNaN(d.getTime())) return;
+        var key = d.toISOString().slice(0, 10); // YYYY-MM-DD
+        byDay[key] = (byDay[key] || 0) + e.amount;
+      });
+      var days = Object.keys(byDay).sort(function (a, b) {
+        return new Date(b) - new Date(a);
+      });
+      var html = '<div class="history-section-title">Daily gastos</div>';
+      days.forEach(function (key) {
+        var d = new Date(key);
+        var label = d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+        html += '<div class="daily-row"><span class="daily-date">' + label + '</span><span class="daily-amount">₱' + formatNumber(byDay[key]) + '</span></div>';
+      });
+      historyDailyTotals.innerHTML = html;
+    }
   }
 
   historyList.innerHTML = '';
@@ -660,11 +692,13 @@ function renderHistory() {
     const div = document.createElement('div');
     div.className = 'history-item expense';
     const e = entry.data;
+    var noteHtml = e.note ? '<div class="item-note">' + escapeHtml(e.note) + '</div>' : '';
     div.innerHTML =
       '<div class="item-left">' +
         '<span class="item-emoji">' + escapeHtml(e.emoji) + '</span>' +
         '<div class="item-details">' +
           '<div class="item-title">' + escapeHtml(e.name) + '</div>' +
+          noteHtml +
           '<div class="item-date">' + formatDate(e.date) + '</div>' +
         '</div>' +
       '</div>' +

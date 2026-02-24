@@ -73,6 +73,7 @@
         <p class="modal-hint">Pwede mo usbon emoji/kahilan, tapos butang amount.</p>
         <input type="text" id="expenseEmoji" placeholder="Emoji" maxlength="4">
         <input type="text" id="expenseName" placeholder="Ngaran sang gasto (e.g. snacks)">
+        <input type="text" id="expenseNote" placeholder="Optional: detalye (e.g. Jollibee, McDo, GrabFood)">
         <input type="number" id="expenseAmount" placeholder="Tag pila ni? (₱)" min="0" step="0.01" inputmode="decimal">
         <p class="expense-date-hint" id="expenseDateHint"></p>
         <div class="amount-chips" id="amountChips">
@@ -141,6 +142,9 @@
       <div class="overlay-header">
         <h2>📋 Lista sang tanan</h2>
         <button type="button" class="btn btn-close" id="closeHistory">✕ Close</button>
+      </div>
+      <div class="history-daily-totals" id="historyDailyTotals">
+        <!-- Filled by JavaScript (daily totals) -->
       </div>
       <div class="history-list" id="historyList">
         <!-- Filled by JavaScript -->
