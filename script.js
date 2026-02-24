@@ -83,6 +83,7 @@ const pieChartWrap = document.getElementById('pieChartWrap');
 const pieChart = document.getElementById('pieChart');
 const pieTooltip = document.getElementById('pieTooltip');
 const pieLegend = document.getElementById('pieLegend');
+const categoryDetail = document.getElementById('categoryDetail');
 const expenseDateHint = document.getElementById('expenseDateHint');
 const quickAddGrid = document.getElementById('quickAddGrid');
 const amountChips = document.getElementById('amountChips');
@@ -440,7 +441,7 @@ function getCategoryBreakdown() {
   var byKey = {};
   expenses.forEach(function (e) {
     var key = e.emoji + ' ' + e.name;
-    if (!byKey[key]) byKey[key] = { emoji: e.emoji, name: e.name, amount: 0 };
+    if (!byKey[key]) byKey[key] = { key: key, emoji: e.emoji, name: e.name, amount: 0 };
     byKey[key].amount += e.amount;
   });
   return Object.keys(byKey)
@@ -550,6 +551,14 @@ function renderInsightsSection() {
   var borrowStats = getBorrowStats();
   var categories = getCategoryBreakdown(); // [{emoji, name, amount}, ...]
 
+  // Build map from category key to list of expenses for detail view
+  var expensesByCategory = {};
+  expenses.forEach(function (e) {
+    var key = e.emoji + ' ' + e.name;
+    if (!expensesByCategory[key]) expensesByCategory[key] = [];
+    expensesByCategory[key].push(e);
+  });
+
   // Percent used (gastos only)
   var percentUsed = total_added > 0 ? (spent / total_added) * 100 : 0;
   percentUsed = Math.min(100, Math.round(percentUsed));
@@ -594,21 +603,45 @@ function renderInsightsSection() {
     pieChartWrap.style.display = 'block';
 
     var leg = '';
+    if (categoryDetail) categoryDetail.innerHTML = '';
     categories.forEach(function (c, i) {
       var pct = total_added > 0 ? ((c.amount / total_added) * 100).toFixed(1) : '0';
-      leg += '<div class="pie-legend-item" data-index="' + i + '"><span class="pie-legend-dot" style="background:' + PIE_COLORS[i % PIE_COLORS.length] + '"></span><span class="pie-legend-label">' + escapeHtml(c.emoji + ' ' + c.name) + '</span><span class="pie-legend-pct">' + pct + '%</span></div>';
+      leg += '<div class="pie-legend-item" data-index="' + i + '" data-key="' + escapeHtml(c.key) + '"><span class="pie-legend-dot" style="background:' + PIE_COLORS[i % PIE_COLORS.length] + '"></span><span class="pie-legend-label">' + escapeHtml(c.emoji + ' ' + c.name) + '</span><span class="pie-legend-pct">' + pct + '%</span></div>';
     });
     pieLegend.innerHTML = leg;
+
+    // helper to show detail list for a category
+    function showCategoryDetail(key) {
+      if (!categoryDetail) return;
+      var list = expensesByCategory[key] || [];
+      if (!list.length) {
+        categoryDetail.innerHTML = '<p class="category-empty">Wala pa detail para sini nga category.</p>';
+        return;
+      }
+      // sort newest first
+      list = list.slice().sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+      var html = '<div class="category-detail-title">' + escapeHtml(key) + '</div>';
+      list.forEach(function (e) {
+        var noteText = e.note ? ' — ' + e.note : '';
+        html += '<div class="category-detail-row"><span class="cat-main">' +
+          escapeHtml(e.emoji + ' ' + e.name) + noteText +
+          '</span><span class="cat-amount">₱' + formatNumber(e.amount) + '</span></div>';
+      });
+      categoryDetail.innerHTML = html;
+    }
 
     pieLegend.querySelectorAll('.pie-legend-item').forEach(function (item) {
       item.addEventListener('click', function () {
         var idx = parseInt(item.getAttribute('data-index'), 10);
         showPieTooltip(idx);
+        var key = item.getAttribute('data-key');
+        if (key) showCategoryDetail(key);
       });
     });
   } else {
     pieChartWrap.style.display = 'none';
     if (pieLegend) pieLegend.innerHTML = '';
+    if (categoryDetail) categoryDetail.innerHTML = '';
   }
 }
 
@@ -673,6 +706,9 @@ function renderHistory() {
         var key = d.toISOString().slice(0, 10); // YYYY-MM-DD
         byDay[key] = (byDay[key] || 0) + e.amount;
       });
+      // ensure today is always shown even if 0 gastos
+      var todayKey = new Date().toISOString().slice(0, 10);
+      if (!byDay[todayKey]) byDay[todayKey] = 0;
       var days = Object.keys(byDay).sort(function (a, b) {
         return new Date(b) - new Date(a);
       });
@@ -744,13 +780,40 @@ function renderHistory() {
     historyList.appendChild(div);
   }
 
-  // Expenses section
+  // Expenses section (with per-day headers above items)
   if (expenseEntries.length > 0) {
     const header = document.createElement('h3');
     header.className = 'history-section-title';
     header.textContent = 'Mga gastos';
     historyList.appendChild(header);
-    expenseEntries.forEach(appendExpenseItem);
+
+    var lastDayKey = null;
+    expenseEntries.forEach(function (entry) {
+      var d = new Date(entry.date);
+      var key = d.toISOString().slice(0, 10);
+      if (key !== lastDayKey) {
+        lastDayKey = key;
+        var dayHeader = document.createElement('div');
+        dayHeader.className = 'history-day-header';
+        var label = d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+        var totalForDay = (historyDailyTotals && expenses.length)
+          ? (function () {
+              var sum = 0;
+              expenses.forEach(function (e) {
+                var dd = new Date(e.date);
+                if (!isNaN(dd.getTime()) && dd.toISOString().slice(0, 10) === key) {
+                  sum += e.amount;
+                }
+              });
+              return sum;
+            })()
+          : 0;
+        dayHeader.innerHTML = '<span class="day-header-date">' + label +
+          '</span><span class="day-header-total">₱' + formatNumber(totalForDay) + '</span>';
+        historyList.appendChild(dayHeader);
+      }
+      appendExpenseItem(entry);
+    });
   }
 
   // Borrows section
