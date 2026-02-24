@@ -936,6 +936,8 @@ body.app-ready .app {
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .btn-action {
@@ -959,6 +961,11 @@ body.app-ready .app {
 
 .history-item.show-actions .item-swipe-inner {
   transform: translateX(-120px);
+}
+
+.history-item.show-actions .item-actions {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .history-item.expense .item-emoji {
