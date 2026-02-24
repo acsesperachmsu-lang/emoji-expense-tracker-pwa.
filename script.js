@@ -610,32 +610,40 @@ function renderInsightsSection() {
     });
     pieLegend.innerHTML = leg;
 
-    // helper to show detail list for a category
-    function showCategoryDetail(key) {
-      if (!categoryDetail) return;
-      var list = expensesByCategory[key] || [];
-      if (!list.length) {
-        categoryDetail.innerHTML = '<p class="category-empty">Wala pa detail para sini nga category.</p>';
-        return;
-      }
-      // sort newest first
-      list = list.slice().sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
-      var html = '<div class="category-detail-title">' + escapeHtml(key) + '</div>';
-      list.forEach(function (e) {
-        var noteText = e.note ? ' — ' + e.note : '';
-        html += '<div class="category-detail-row"><span class="cat-main">' +
-          escapeHtml(e.emoji + ' ' + e.name) + noteText +
-          '</span><span class="cat-amount">₱' + formatNumber(e.amount) + '</span></div>';
-      });
-      categoryDetail.innerHTML = html;
-    }
-
+    // helper to show detail list for a category, directly under clicked legend item
+    var currentCategoryKey = null;
     pieLegend.querySelectorAll('.pie-legend-item').forEach(function (item) {
       item.addEventListener('click', function () {
         var idx = parseInt(item.getAttribute('data-index'), 10);
         showPieTooltip(idx);
+        if (!categoryDetail) return;
         var key = item.getAttribute('data-key');
-        if (key) showCategoryDetail(key);
+        if (!key) return;
+
+        // toggle off if same category clicked again
+        if (currentCategoryKey === key && categoryDetail.innerHTML) {
+          categoryDetail.innerHTML = '';
+          currentCategoryKey = null;
+          return;
+        }
+
+        currentCategoryKey = key;
+        var list = expensesByCategory[key] || [];
+        if (!list.length) {
+          categoryDetail.innerHTML = '<p class="category-empty">Wala pa detail para sini nga category.</p>';
+        } else {
+          list = list.slice().sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+          var html = '<div class="category-detail-title">' + escapeHtml(key) + '</div>';
+          list.forEach(function (e) {
+            var noteText = e.note ? ' — ' + e.note : '';
+            html += '<div class="category-detail-row"><span class="cat-main">' +
+              escapeHtml(e.emoji + ' ' + e.name) + noteText +
+              '</span><span class="cat-amount">₱' + formatNumber(e.amount) + '</span></div>';
+          });
+          categoryDetail.innerHTML = html;
+        }
+        // move detail block right under the clicked legend row
+        item.insertAdjacentElement('afterend', categoryDetail);
       });
     });
   } else {
@@ -695,31 +703,20 @@ function renderHistory() {
 
   // Daily totals (expenses only)
   if (historyDailyTotals) {
-    if (expenses.length === 0) {
-      historyDailyTotals.innerHTML = '';
-    } else {
-      var byDay = {};
-      expenses.forEach(function (e) {
-        if (!e.date) return;
-        var d = new Date(e.date);
-        if (isNaN(d.getTime())) return;
-        var key = d.toISOString().slice(0, 10); // YYYY-MM-DD
-        byDay[key] = (byDay[key] || 0) + e.amount;
-      });
-      // ensure today is always shown even if 0 gastos
-      var todayKey = new Date().toISOString().slice(0, 10);
-      if (!byDay[todayKey]) byDay[todayKey] = 0;
-      var days = Object.keys(byDay).sort(function (a, b) {
-        return new Date(b) - new Date(a);
-      });
-      var html = '<div class="history-section-title">Daily gastos</div>';
-      days.forEach(function (key) {
-        var d = new Date(key);
-        var label = d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
-        html += '<div class="daily-row"><span class="daily-date">' + label + '</span><span class="daily-amount">₱' + formatNumber(byDay[key]) + '</span></div>';
-      });
-      historyDailyTotals.innerHTML = html;
-    }
+    var todayKey = new Date().toISOString().slice(0, 10);
+    var todayTotal = 0;
+    expenses.forEach(function (e) {
+      if (!e.date) return;
+      var d = new Date(e.date);
+      if (isNaN(d.getTime())) return;
+      var key = d.toISOString().slice(0, 10);
+      if (key === todayKey) todayTotal += e.amount;
+    });
+    var d = new Date(todayKey);
+    var label = d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+    var html = '<div class="history-section-title">Daily gastos (subong)</div>';
+    html += '<div class="daily-row"><span class="daily-date">' + label + '</span><span class="daily-amount">₱' + formatNumber(todayTotal) + '</span></div>';
+    historyDailyTotals.innerHTML = html;
   }
 
   historyList.innerHTML = '';
