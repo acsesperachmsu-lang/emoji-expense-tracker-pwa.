@@ -1165,7 +1165,7 @@ if (resetAppBtn) resetAppBtn.addEventListener('click', resetAppData);
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
     document.body.classList.add('app-ready');
-    navigator.serviceWorker.register('./service-worker.js').then(function () {
+    navigator.serviceWorker.register('./service-worker.js?v=3').then(function () {
       // Registration worked
     }).catch(function () {
       // Registration failed (e.g. not served over HTTPS or file://)

@@ -3,7 +3,7 @@
  * Caches app files so the app works offline.
  */
 
-const CACHE_NAME = 'emoji-expense-tracker-v2';
+const CACHE_NAME = 'emoji-expense-tracker-v3';
 const urlsToCache = [
   './',
   './index.html',
