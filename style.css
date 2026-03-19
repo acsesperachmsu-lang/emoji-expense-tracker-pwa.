@@ -1011,10 +1011,39 @@ body.app-ready .app {
     overflow: visible;
   }
 
-  /* Keep rounded corners without clipping text layout */
+  /* iOS UX fix:
+     our swipe container is wider than the card (100%+128px) to "reveal" actions.
+     On iOS this feels like the list can be dragged left/right, and it can hide the amount.
+     So on iOS we disable the swipe-reveal layout and use long-press to show buttons below. */
+  .history-list {
+    overflow-x: hidden;
+  }
+
   .item-swipe-inner {
+    width: 100%;
+    display: block;
+    transition: none;
+    transform: none !important;
     border-radius: inherit;
     overflow: hidden;
+  }
+
+  .history-item.show-actions .item-swipe-inner {
+    transform: none;
+  }
+
+  .item-actions {
+    width: 100%;
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    opacity: 0;
+    pointer-events: none;
+    padding-top: 0.6rem;
+  }
+
+  .history-item.show-actions .item-actions {
+    opacity: 1;
+    pointer-events: auto;
   }
 }
 
