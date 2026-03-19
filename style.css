@@ -81,7 +81,7 @@ body::after {
   max-width: 480px;
   margin: 0 auto;
   min-height: 100vh;
-  padding: 1.25rem;
+  padding: clamp(0.9rem, 4vw, 1.25rem);
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -680,7 +680,7 @@ body.app-ready .app {
   -webkit-backdrop-filter: blur(24px);
   z-index: 50;
   flex-direction: column;
-  padding: var(--safe-top) 1rem calc(1rem + var(--safe-bottom));
+  padding: var(--safe-top) clamp(0.85rem, 4vw, 1rem) calc(clamp(0.85rem, 4vw, 1rem) + var(--safe-bottom));
   overflow: hidden;
 }
 
@@ -883,16 +883,16 @@ body.app-ready .app {
   -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: clamp(0.6rem, 2.6vw, 0.9rem);
 }
 
 .history-section-title {
-  font-size: 0.8rem;
+  font-size: clamp(0.75rem, 3vw, 0.82rem);
   font-weight: 800;
   color: var(--text-soft);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  margin: 0.75rem 0 0.1rem;
+  margin: clamp(0.6rem, 3vw, 0.85rem) 0 0.15rem;
 }
 
 .history-item {
@@ -900,7 +900,7 @@ body.app-ready .app {
   backdrop-filter: blur(var(--blur));
   -webkit-backdrop-filter: blur(var(--blur));
   border-radius: var(--radius-sm);
-  padding: 1.05rem 1rem;
+  padding: clamp(0.9rem, 3.8vw, 1.05rem) clamp(0.85rem, 3.5vw, 1rem);
   border: 2px solid var(--glass-border);
   box-shadow: var(--shadow-cute), inset 0 1px 0 rgba(255, 255, 255, 0.6);
   display: flex;
@@ -926,10 +926,11 @@ body.app-ready .app {
 
 .item-main {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 0.5rem;
   flex: 1;
+  flex-wrap: wrap;
 }
 
 .item-actions {
@@ -994,13 +995,36 @@ body.app-ready .app {
 
 .item-title {
   font-weight: 700;
-  font-size: 1rem;
+  font-size: clamp(0.95rem, 3.7vw, 1rem);
   color: var(--text);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .item-note {
-  font-size: 0.8rem;
+  font-size: clamp(0.78rem, 3.3vw, 0.86rem);
   color: var(--text);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.item-date {
+  line-height: 1.2;
+}
+
+.item-amount {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 360px) {
+  .history-item.show-actions .item-swipe-inner {
+    transform: translateX(-132px);
+  }
+  .btn-action {
+    padding: 0.3rem 0.55rem;
+    font-size: 0.72rem;
+  }
 }
 
 /* Category detail under stats */
