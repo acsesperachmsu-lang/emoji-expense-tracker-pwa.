@@ -903,11 +903,7 @@ body.app-ready .app {
   padding: clamp(0.9rem, 3.8vw, 1.05rem) clamp(0.85rem, 3.5vw, 1rem);
   border: 2px solid var(--glass-border);
   box-shadow: var(--shadow-cute), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  display: block;
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   animation: slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   overflow: hidden;
@@ -922,20 +918,23 @@ body.app-ready .app {
   display: flex;
   align-items: stretch;
   transition: transform 0.2s ease-out;
+  width: calc(100% + 128px);
 }
 
 .item-main {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.5rem;
-  flex: 1;
-  flex-wrap: wrap;
+  flex: 0 0 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .item-actions {
+  flex: 0 0 128px;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.25rem;
   opacity: 0;
   pointer-events: none;
@@ -961,7 +960,7 @@ body.app-ready .app {
 }
 
 .history-item.show-actions .item-swipe-inner {
-  transform: translateX(-120px);
+  transform: translateX(-128px);
 }
 
 .history-item.show-actions .item-actions {
@@ -978,11 +977,7 @@ body.app-ready .app {
 }
 
 .item-left {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  flex: 1;
-  min-width: 0;
+  display: contents;
 }
 
 .item-emoji {
@@ -991,6 +986,9 @@ body.app-ready .app {
 
 .item-details {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
 .item-title {
@@ -1015,11 +1013,12 @@ body.app-ready .app {
 .item-amount {
   flex-shrink: 0;
   white-space: nowrap;
+  align-self: start;
 }
 
 @media (max-width: 360px) {
   .history-item.show-actions .item-swipe-inner {
-    transform: translateX(-132px);
+    transform: translateX(-128px);
   }
   .btn-action {
     padding: 0.3rem 0.55rem;
