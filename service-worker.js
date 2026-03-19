@@ -3,13 +3,15 @@
  * Caches app files so the app works offline.
  */
 
-const CACHE_NAME = 'emoji-expense-tracker-v1';
+const CACHE_NAME = 'emoji-expense-tracker-v2';
 const urlsToCache = [
   './',
   './index.html',
   './style.css',
   './script.js',
-  './manifest.json'
+  './manifest.json',
+  './EsnoPera_192x192.png',
+  './EsnoPera_512x512.png'
 ];
 
 // Install: cache all app files
@@ -40,9 +42,52 @@ self.addEventListener('activate', function (event) {
 
 // Fetch: serve from cache when offline
 self.addEventListener('fetch', function (event) {
-  event.respondWith(
-    caches.match(event.request).then(function (response) {
-      return response || fetch(event.request);
-    })
-  );
+  if (event.request.method !== 'GET') return;
+
+  var url = new URL(event.request.url);
+  var isSameOrigin = url.origin === self.location.origin;
+  var isNavigation = event.request.mode === 'navigate';
+
+  // For page navigations, try network first so updates land immediately.
+  if (isNavigation) {
+    event.respondWith(
+      fetch(event.request)
+        .then(function (response) {
+          var copy = response.clone();
+          caches.open(CACHE_NAME).then(function (cache) {
+            cache.put(event.request, copy);
+          });
+          return response;
+        })
+        .catch(function () {
+          return caches.match('./index.html');
+        })
+    );
+    return;
+  }
+
+  // For same-origin assets (css/js/etc): stale-while-revalidate.
+  if (isSameOrigin) {
+    event.respondWith(
+      caches.match(event.request).then(function (cached) {
+        var fetchPromise = fetch(event.request)
+          .then(function (response) {
+            if (!response || response.status !== 200) return response;
+            var copy = response.clone();
+            caches.open(CACHE_NAME).then(function (cache) {
+              cache.put(event.request, copy);
+            });
+            return response;
+          })
+          .catch(function () {
+            return cached;
+          });
+        return cached || fetchPromise;
+      })
+    );
+    return;
+  }
+
+  // Default: just pass through.
+  event.respondWith(fetch(event.request));
 });
